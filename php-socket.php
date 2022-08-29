@@ -13,3 +13,23 @@ socket_listen($socketResource);
 
 $clientSocketArray = array($socketResource);
 echo "Server is running";
+while (true) {
+	$newSocketArray = $clientSocketArray;
+	socket_select($newSocketArray, $null, $null, 0, 10);
+	
+	if (in_array($socketResource, $newSocketArray)) {
+		$newSocket = socket_accept($socketResource);
+		$clientSocketArray[] = $newSocket;
+		
+		$header = socket_read($newSocket, 1024);
+		$chatHandler->doHandshake($header, $newSocket, HOST_NAME, PORT);
+		
+		socket_getpeername($newSocket, $client_ip_address);
+		$connectionACK = $chatHandler->newConnectionACK($client_ip_address);
+		
+		$chatHandler->send($connectionACK);
+		
+		$newSocketIndex = array_search($socketResource, $newSocketArray);
+		unset($newSocketArray[$newSocketIndex]);
+	}
+}
