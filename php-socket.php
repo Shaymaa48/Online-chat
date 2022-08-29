@@ -32,7 +32,7 @@ while (true) {
 		$newSocketIndex = array_search($socketResource, $newSocketArray);
 		unset($newSocketArray[$newSocketIndex]);
 	}
-    
+
     foreach ($newSocketArray as $newSocketArrayResource) {	
 		while(socket_recv($newSocketArrayResource, $socketData, 1024, 0) >= 1){
 			$socketMessage = $chatHandler->unseal($socketData);
@@ -42,5 +42,15 @@ while (true) {
 			$chatHandler->send($chat_box_message);
 			break 2;
 		}
+
+        $socketData = @socket_read($newSocketArrayResource, 1024, PHP_NORMAL_READ);
+		if ($socketData === false) { 
+			socket_getpeername($newSocketArrayResource, $client_ip_address);
+			$connectionACK = $chatHandler->connectionDisconnectACK($client_ip_address);
+			$chatHandler->send($connectionACK);
+			$newSocketIndex = array_search($newSocketArrayResource, $clientSocketArray);
+			unset($clientSocketArray[$newSocketIndex]);			
+		}
     }
 }
+socket_close($socketResource);
